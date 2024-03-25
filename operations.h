@@ -1,0 +1,4 @@
+OPERATION('+', +)
+OPERATION('*', *)
+OPERATION('/', /)
+OPERATION('-', -)
