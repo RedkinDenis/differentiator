@@ -7,13 +7,22 @@
 enum data_t
 {
     NUM = 1,
+    PAR = 4,
     OPERAND = 2,
+    LONG_OPERAND = 3,
     DEFUALT = 0
+};
+
+enum operation
+{
+    ERR, ADD, SUB, MUL, DIV, LN, EXP
 };
 
 union data
 {
     unsigned char operand;
+    char* param;
+    char* long_operand;
     double value;
 };
 

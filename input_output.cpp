@@ -2,9 +2,12 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <assert.h>
+#include <ctype.h>
 
 #include "input_output.h"
 #include "../UDL.h"
+
+#define GET_VARIABLE_NAME(variable) #variable
 
 #define CHANGE_NODE(from, to)        \
     do                               \
@@ -29,6 +32,8 @@ static err print_tree__ (Node* head, int* tab);
 static err fprint_tree__ (FILE* out, Node* head, int* tab);
 
 // static void print_data (Node* head);
+
+static int check_param (const char* data_buffer);
 
 static void draw_tree_1 (FILE* save, Node* tree, int* node_num);
 
@@ -58,7 +63,6 @@ err print_tree__ (Node* head, int* tab)
     printf("(");
 
     printf("%*s", *tab * 4, "");
-
     print_data(head);
 
     if (head->left != NULL)
@@ -86,7 +90,13 @@ void print_data (Node* head)
         printf("#%lf#", head->data.value);
         
     else if (head->type == OPERAND)
-        printf("#%c#", head->data.operand);  
+        printf("#%c#", head->data.operand); 
+    else if (head->type == LONG_OPERAND)
+        printf("#%s#", head->data.long_operand); 
+    else if (head->type == PAR)
+        printf("#%s#", head->data.param); 
+    else if (head->type ==  DEFUALT)
+        printf("#null#");
     
     return;
 }
@@ -207,45 +217,75 @@ void goto_prace (char* buf, int* ptr)
 void get_data(char* buf, int* ptr, Node* tree, int data_len)
 {
     char* data_buffer = (char*)calloc(DATA_LEN + 1, sizeof(char));
-    
-    //printf("buf - %s\n", buf);
-    int i = 1;
     while (buf[*ptr - 1] != '#')
         *ptr += 1;
 
-    data_buffer[0] = '#';
+    int i = 0;
     while ((buf[*ptr] != '#') && i <= data_len)
     {
         data_buffer[i] = buf[*ptr];
         *ptr += 1;
         i++;
     }
-    strcat(data_buffer, "#");
-
-    //printf("data_buffer - %s\n", data_buffer);
-    // for (int i = 0; i < data_len; i++)
-    //     printf("%c", data_buffer[i]);
-    // printf("\n");
     
-    //double temp = 0;
-    int x = sscanf(data_buffer, "#%lf#", &(tree->data.value));
-    if (x == 1) 
+    if (check_param(data_buffer))
     {
-        //printf("here\n");
-        tree->type = NUM;
+        tree->data.param = strdup(data_buffer);
+        tree->type = PAR;
+
+        free(data_buffer);
         goto_prace(buf, ptr);
         return;
     }
+    else 
+    {
+        int x = sscanf(data_buffer, "%lf", &(tree->data.value));
+        if (x == 1) 
+        {
+            tree->type = NUM;
+            free(data_buffer);
+            goto_prace(buf, ptr);
+            return;
+        }
+    }
+    if (strlen(data_buffer) == 1)
+    {
+        tree->data.operand = data_buffer[0];
+        tree->type = OPERAND;
+    }
+    else
+    {
+        if (strcmp(data_buffer, "null") == 0)
+            tree->type = DEFUALT;
+        else
+            tree->type = LONG_OPERAND;
 
-    // while (buf[*ptr] == ' ')
-    //     *ptr += 1;
-    
-    tree->data.operand = data_buffer[1];
-    tree->type = OPERAND;
+        tree->data.long_operand = (char*)calloc(strlen(data_buffer) + 1, sizeof(char));
+        strcpy(tree->data.long_operand, data_buffer);    
+    }
 
     free(data_buffer);
-
     goto_prace(buf, ptr);
+}
+
+int check_param (const char* data_buffer)
+{
+    int len = (int)strlen(data_buffer);
+    // printf("len - %d\n", len);
+    if (isalpha(data_buffer[len - 1]))
+    {
+        if (len == 1)
+            return 1;
+        for (int i = len - 1; i >= 0; i--)
+        {   
+            if (('0' <= data_buffer[i]) && (data_buffer[i] <= '9'))
+            {
+                // printf("%s\n", data_buffer);
+                return 1;
+            }
+        }
+    }
+    return 0;
 }
 
 err draw_tree (Node* tree)
@@ -281,25 +321,57 @@ char* data_to_string (Node* tree)
         data = (char*)calloc(2, sizeof(char));
         sprintf(data, "%c", tree->data);
     }
+    else if (tree->type == LONG_OPERAND || tree->type == DEFUALT)
+    {
+        data = (char*)calloc(strlen(tree->data.long_operand) + 1, sizeof(char));
+        strcpy(data, tree->data.long_operand);
+    }    
+    else if (tree->type == PAR)
+    {
+        data = (char*)calloc(strlen(tree->data.param) + 1, sizeof(char));
+        strcpy(data, tree->data.param);
+    }
     return data;
+}
+
+char* type_to_str (Node* tree)
+{
+    char* type = (char*)calloc(20, sizeof(char));
+    
+    switch (tree->type)
+    {
+        case NUM:
+            strcpy(type, "NUM");
+            break;
+        case OPERAND:
+            strcpy(type, "OPERAND");
+            break;
+        case PAR:
+            strcpy(type, "PAR");
+            break;
+        case LONG_OPERAND:
+            strcpy(type, "LONG_OPERAND");
+            break;
+    }
+    return type;
 }
 
 void draw_tree_1 (FILE* save, Node* tree, int* node_num)
 {
     char* data = data_to_string(tree);
-
-    char* buffer = (char*)calloc(strlen(data) + 3, sizeof(char));
-    buffer[0] = '"';
+    char* buffer = (char*)calloc(strlen(data) + 1, sizeof(char));
     strcat(buffer, data);                                                
-    buffer[strlen(data) + 1] = '"';
 
     tree->num_in_tree = *node_num;
 
-    if (tree->right == NULL && tree->left == NULL)
-        fprintf(save, "    %d [shape = Mrecord, style = filled, fillcolor = cyan, label = %s ];\n", *node_num, buffer);
-    else
-        fprintf(save, "    %d [shape = Mrecord, style = filled, fillcolor = lightgoldenrod1, label = %s ];\n", *node_num, buffer);
+    char* type = type_to_str(tree);
 
+    if (tree->type == NUM || tree->type == PAR)
+        fprintf(save, "    %d [shape = Mrecord, style = filled, fillcolor = lightgoldenrod1, label = %cTYPE: %s | DATA: %s%c];\n", *node_num, '"', type, buffer, '"');
+    else if (tree->type != DEFUALT)
+        fprintf(save, "    %d [shape = Mrecord, style = filled, fillcolor = cyan, label = %cTYPE: %s | DATA: %s%c];\n", *node_num, '"', type, buffer, '"');
+    else 
+        *node_num -= 1;
 
     if (tree->left != NULL)
     {
@@ -329,6 +401,5 @@ void draw_tree_2 (FILE* save, Node* tree)
         fprintf(save, "    %d -> %d;\n", tree->num_in_tree, (tree->right)->num_in_tree);
         draw_tree_2(save, tree->right);
     }
-
     return;
 }
