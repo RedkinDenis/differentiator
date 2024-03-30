@@ -33,7 +33,7 @@ static err fprint_tree__ (FILE* out, Node* head, int* tab);
 
 // static void print_data (Node* head);
 
-static int check_param (const char* data_buffer);
+static int check_var (const char* data_buffer);
 
 static void draw_tree_1 (FILE* save, Node* tree, int* node_num);
 
@@ -93,8 +93,8 @@ void print_data (Node* head)
         printf("#%c#", head->data.operand); 
     else if (head->type == LONG_OPERAND)
         printf("#%s#", head->data.long_operand); 
-    else if (head->type == PAR)
-        printf("#%s#", head->data.param); 
+    else if (head->type == VAR)
+        printf("#%s#", head->data.var); 
     else if (head->type ==  DEFUALT)
         printf("#null#");
     
@@ -228,10 +228,10 @@ void get_data(char* buf, int* ptr, Node* tree, int data_len)
         i++;
     }
     
-    if (check_param(data_buffer))
+    if (check_var(data_buffer))
     {
-        tree->data.param = strdup(data_buffer);
-        tree->type = PAR;
+        tree->data.var = strdup(data_buffer);
+        tree->type = VAR;
 
         free(data_buffer);
         goto_prace(buf, ptr);
@@ -268,7 +268,7 @@ void get_data(char* buf, int* ptr, Node* tree, int data_len)
     goto_prace(buf, ptr);
 }
 
-int check_param (const char* data_buffer)
+int check_var (const char* data_buffer)
 {
     int len = (int)strlen(data_buffer);
     // printf("len - %d\n", len);
@@ -326,10 +326,10 @@ char* data_to_string (Node* tree)
         data = (char*)calloc(strlen(tree->data.long_operand) + 1, sizeof(char));
         strcpy(data, tree->data.long_operand);
     }    
-    else if (tree->type == PAR)
+    else if (tree->type == VAR)
     {
-        data = (char*)calloc(strlen(tree->data.param) + 1, sizeof(char));
-        strcpy(data, tree->data.param);
+        data = (char*)calloc(strlen(tree->data.var) + 1, sizeof(char));
+        strcpy(data, tree->data.var);
     }
     return data;
 }
@@ -346,8 +346,8 @@ char* type_to_str (Node* tree)
         case OPERAND:
             strcpy(type, "OPERAND");
             break;
-        case PAR:
-            strcpy(type, "PAR");
+        case VAR:
+            strcpy(type, "VAR");
             break;
         case LONG_OPERAND:
             strcpy(type, "LONG_OPERAND");
@@ -366,7 +366,7 @@ void draw_tree_1 (FILE* save, Node* tree, int* node_num)
 
     char* type = type_to_str(tree);
 
-    if (tree->type == NUM || tree->type == PAR)
+    if (tree->type == NUM || tree->type == VAR)
         fprintf(save, "    %d [shape = Mrecord, style = filled, fillcolor = lightgoldenrod1, label = %cTYPE: %s | DATA: %s%c];\n", *node_num, '"', type, buffer, '"');
     else if (tree->type != DEFUALT)
         fprintf(save, "    %d [shape = Mrecord, style = filled, fillcolor = cyan, label = %cTYPE: %s | DATA: %s%c];\n", *node_num, '"', type, buffer, '"');
