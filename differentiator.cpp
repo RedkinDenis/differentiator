@@ -33,17 +33,18 @@ int main ()
     importTree(read, &tree);
     fclose(read);
     
-    // print_tree(&tree);
-    Node* Diff = diff(&tree);
-
+    simplifier(&tree);
     draw_tree(&tree);
     Sleep(1000);
 
+    Node* Diff = diff(&tree);
     draw_tree(Diff);
     Sleep(1000);
 
     simplifier(Diff);
     draw_tree(Diff);
+
+    //printf("answer - %lf\n", calculator(&tree));
 
     //tree_kill(&tree);
 } 
@@ -72,12 +73,14 @@ double calculator (Node* tree, int* var)
     {
         switch (tree->data.operand)
         {
-            #define OPERATION(str, op)                                      \
-            case str:                                                       \
+            #define OPERATION(str, op)                                                \
+            case str:                                                                 \
                 return calculator(tree->left, var) op calculator(tree->right, var);   \
                 break;      
             #include "operations.h"
             #undef OPERATION
+            case '^':
+                return pow(calculator(tree->left, var), calculator(tree->right, var));
             default:
                 printf("unknown operator\n");
                 break;            
@@ -102,10 +105,8 @@ void simplifier (Node* tree)
     while (changed > 0)
     {
         changed = 0;
-        //printf("changed - %d\n", changed);
         calc_simplifier(tree, &changed);
         second_simplifier(tree, &changed);
-        //printf("changed - %d\n", changed);
     }     
 }
 
@@ -113,7 +114,7 @@ void calc_simplifier (Node* tree, int* changed)
 {
     int var = 0;
     double temp = calculator(tree, &var);
-    if (var == 0 && tree->type != NUM)
+    if (var == 0 && tree->type != NUM && tree->type != DEFUALT)
     {
         tree->data.value = temp;
         tree->type = NUM;
@@ -123,7 +124,7 @@ void calc_simplifier (Node* tree, int* changed)
         tree->right = NULL;
 
         *changed += 1;
-        printf("6 ");
+        printf("1 ");
     }
     
     if (tree->left != NULL)
@@ -144,21 +145,21 @@ void second_simplifier (Node* tree, int* changed)
             tree->left = NULL;
             tree->right = NULL;
 
-            printf("1 ");
             *changed += 1;
+            printf("2 ");
         }
         else if (tree->left->type == NUM && tree->left->data.value == 1)
         {
             memcpy(tree, tree->right, sizeof(Node));
-            printf("2 ");
             *changed += 1;
+            printf("3 ");
         }
 
         else if (tree->right->type == NUM && tree->right->data.value == 1)
         {
             memcpy(tree, tree->left, sizeof(Node));
-            printf("3 ");
             *changed += 1;
+            printf("4 ");
         }
     }
     else if (tree->type == OPERAND && tree->data.operand == '+')
@@ -166,15 +167,15 @@ void second_simplifier (Node* tree, int* changed)
         if (tree->left->type == NUM && tree->left->data.value == 0)
         {
             memcpy(tree, tree->right, sizeof(Node));
-            printf("4 ");
             *changed += 1;
+            printf("5 ");
         }
 
         else if (tree->right->type == NUM && tree->right->data.value == 0)
         {
             memcpy(tree, tree->left, sizeof(Node));
-            printf("5 ");
             *changed += 1;
+            printf("6 ");
         }
     }
     
@@ -212,6 +213,10 @@ Node* create_node (data_t type, void* data, Node* left, Node* right)
             break;
         case OPERAND:
             newNode->data.operand = *(char*)data;
+            break;
+        case LONG_OPERAND:
+            newNode->data.long_operand = (char*)calloc(strlen((char*)data), sizeof(char));
+            strcpy(newNode->data.long_operand, (char*)data);
             break;
     }
  
@@ -260,7 +265,91 @@ Node* diff (const Node* node)
 
                     return res;
                 }
+                case '/':
+                {   
+                    Node* du = diff(node->left);    Node* cu = copy_subtree(node->left);
+                    Node* dv = diff(node->right);   Node* cv = copy_subtree(node->right);
+
+                    operation sub = SUB;
+                    operation div = DIV;
+                    operation mul = MUL;
+                    
+                    Node* nominator = create_node(OPERAND, &sub, create_node(OPERAND, &mul, du, cv), create_node(OPERAND, &mul, cu, dv));
+                    Node* denominator = create_node(OPERAND, &mul, copy_subtree(cv), copy_subtree(cv));
+
+                    Node* res = create_node(OPERAND, &div, nominator, denominator);
+                    return res;
+                }   
+                case '^':
+                {
+                    if (node->left->type == NUM)
+                    {
+                        char* ln = (char*)"ln";
+                        operation mul = MUL;
+
+                        Node* cx = copy_subtree((Node*)node);
+                        Node* dx = diff(node->right);
+                        Node* lna = create_node(LONG_OPERAND, ln, NULL, copy_subtree(node->left));
+                        Node* res = create_node(OPERAND, &mul, lna, create_node(OPERAND, &mul, cx, dx));
+
+                        return res;
+                    }
+                    else if (node->right->type == NUM)
+                    {
+                        operation mul = MUL;
+                        operation sub = SUB;
+                        operation pow = POW;
+
+                        double temp = 1;
+                        Node* degree_down = create_node(NUM, &temp, NULL, NULL);
+                        Node* degree = create_node(OPERAND, &sub, copy_subtree(node->right), degree_down); 
+
+                        Node* cx = copy_subtree(node->left);
+                        Node* dx = diff(node->left);
+
+                        Node* res = create_node(OPERAND, &mul, copy_subtree(node->right), create_node(OPERAND, &mul, dx, create_node(OPERAND, &pow, cx, degree)));
+
+                        return res;
+                    }
+                    else 
+                    {
+                        char* exp = (char*)"exp";
+                        char* ln = (char*)"ln";
+                        operation mul = MUL;
+
+                        Node* middle = create_node(LONG_OPERAND, exp, NULL, create_node(OPERAND, &mul, copy_subtree(node->right), create_node(LONG_OPERAND, ln, NULL, copy_subtree(node->left))));
+
+                        return diff(middle);
+                    }
+                }
             }
+        case (LONG_OPERAND):
+        {
+            switch (long_op_det(node->data.long_operand))
+            {
+                case LN:
+                {
+                    operation mul = MUL;
+                    operation div = DIV;
+                    double temp = 1;
+                    
+                    Node* dln = create_node(OPERAND, &div, create_node(NUM, &temp, NULL, NULL), copy_subtree(node->right));
+                    Node* dx = diff(node->right);
+
+                    Node* res = create_node(OPERAND, &mul, dln, dx);
+                    return res;
+                }
+                case EXP:
+                {
+                    operation mul = MUL;
+
+                    Node* cx = copy_subtree((Node*)node);
+
+                    Node* res = create_node(OPERAND, &mul, cx, diff(node->right));
+                    return res;
+                }     
+            }
+        }
     }
     return NULL;
 }

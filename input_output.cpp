@@ -227,6 +227,8 @@ void get_data(char* buf, int* ptr, Node* tree, int data_len)
         *ptr += 1;
         i++;
     }
+
+    //printf("data_buffer - %s\n", data_buffer);
     
     if (check_var(data_buffer))
     {
@@ -256,7 +258,10 @@ void get_data(char* buf, int* ptr, Node* tree, int data_len)
     else
     {
         if (strcmp(data_buffer, "null") == 0)
+        {
+            //printf("here\n");
             tree->type = DEFUALT;
+        }
         else
             tree->type = LONG_OPERAND;
 

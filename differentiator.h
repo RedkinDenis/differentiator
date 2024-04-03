@@ -21,7 +21,8 @@ enum operation
     MUL = '*', 
     DIV = '/', 
     LN = 'l', 
-    EXP = 'e'
+    EXP = 'e',
+    POW = '^'
 };
 
 union data
