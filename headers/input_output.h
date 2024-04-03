@@ -1,8 +1,8 @@
 #ifndef INPUT_OTPUT_H
 #define INPUT_OTPUT_H
 
-#include <stdio.h> //?
-#include "..\err_codes.h"
+#include <stdio.h> 
+#include "..\..\err_codes.h"
 #include "differentiator.h"
 
 int GetFileSize(FILE* fp);

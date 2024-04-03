@@ -1,5 +1,5 @@
-#include "differentiator.h"
-#include "input_output.h"
+#include "headers/differentiator.h"
+#include "headers/input_output.h"
 #include "..\UDL.h"
 #include <stdlib.h>
 #include <malloc.h>
@@ -96,7 +96,7 @@ double calculator (Node* tree, int* var)
             case str:                                                                 \
                 return calculator(tree->left, var) op calculator(tree->right, var);   \
                 break;      
-            #include "operations.h"
+            #include "headers//differentiator.h"
             #undef OPERATION
             case '^':
                 return pow(calculator(tree->left, var), calculator(tree->right, var));

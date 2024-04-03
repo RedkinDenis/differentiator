@@ -4,7 +4,8 @@
 #include <assert.h>
 #include <ctype.h>
 
-#include "input_output.h"
+#include "headers/differentiator.h"
+#include "headers/input_output.h"
 #include "../UDL.h"
 
 #define GET_VARIABLE_NAME(variable) #variable

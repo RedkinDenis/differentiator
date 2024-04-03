@@ -2,7 +2,7 @@
 #define DIFFERENTIATOR_H
 
 #include <cstddef>
-#include "..\err_codes.h"
+#include "..\..\err_codes.h"
 #define DATA_LEN 40
 
 enum data_t
