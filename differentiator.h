@@ -2,6 +2,7 @@
 #define DIFFERENTIATOR_H
 
 #include <cstddef>
+#include "..\err_codes.h"
 #define DATA_LEN 40
 
 enum data_t
@@ -47,6 +48,9 @@ struct Node
     int num_in_tree = 0;
 };
 
+err tree_kill (Node* head);
+Node* diff (const Node* node);
+void simplifier (Node* tree);
 
 #endif //DIFFERENTIATOR_H
 
