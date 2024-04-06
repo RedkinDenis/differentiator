@@ -10,6 +10,8 @@
 
 #define GET_VARIABLE_NAME(variable) #variable
 
+#define SYNTAX_ERROR printf("SYNTAX ERROR!!!\n");
+
 #define CHANGE_NODE(from, to)        \
     do                               \
     {                                \
@@ -21,8 +23,6 @@
     level++;                         \
     } while(0)
 
-
-static err fill_buffer (FILE* read, char** buf);
 
 static void get_data (char* buf, int* ptr, Node* tree, int data_len);
 
@@ -39,6 +39,15 @@ static int check_var (const char* data_buffer);
 static void draw_tree_1 (FILE* save, Node* tree, int* node_num);
 
 static void draw_tree_2 (FILE* save, Node* tree);
+
+static int get_n ();
+
+static int get_t ();
+
+static int get_e ();
+
+
+static char* s = NULL;
 
 int GetFileSize(FILE* fp)
 {
@@ -92,10 +101,13 @@ void print_data (Node* head)
         
     else if (head->type == OPERAND)
         printf("#%c#", head->data.operand); 
+        
     else if (head->type == LONG_OPERAND)
         printf("#%s#", head->data.long_operand); 
+
     else if (head->type == VAR)
         printf("#%s#", head->data.var); 
+
     else if (head->type ==  DEFUALT)
         printf("#null#");
     
@@ -229,7 +241,7 @@ void get_data(char* buf, int* ptr, Node* tree, int data_len)
         i++;
     }
 
-    //printf("data_buffer - %s\n", data_buffer);
+    // printf("data_buffer - %s\n", data_buffer);
     
     if (check_var(data_buffer))
     {
@@ -327,7 +339,7 @@ char* data_to_string (Node* tree)
         data = (char*)calloc(2, sizeof(char));
         sprintf(data, "%c", tree->data);
     }
-    else if (tree->type == LONG_OPERAND || tree->type == DEFUALT)
+    else if (tree->type == LONG_OPERAND)
     {
         data = (char*)calloc(strlen(tree->data.long_operand) + 1, sizeof(char));
         strcpy(data, tree->data.long_operand);
@@ -337,6 +349,9 @@ char* data_to_string (Node* tree)
         data = (char*)calloc(strlen(tree->data.var) + 1, sizeof(char));
         strcpy(data, tree->data.var);
     }
+    else if (tree->type == DEFUALT)
+        data = (char*)"null";
+
     return data;
 }
 
@@ -408,4 +423,69 @@ void draw_tree_2 (FILE* save, Node* tree)
         draw_tree_2(save, tree->right);
     }
     return;
+}
+
+
+int get_g (const char* str)
+{
+    s = (char*)str;
+    int val = get_e();
+
+    if (*s = '$')
+        s++;
+    else 
+        SYNTAX_ERROR
+    return val;
+}
+
+int get_e ()
+{
+    int val = get_t();
+
+    while (*s == '+' || *s == '-')
+    {
+        char op = *s;
+        s++;
+        int val2 = get_t();
+        if (op == '+')  
+            val += val2;
+        else 
+            val -= val2;
+    }
+    
+    return val;
+}
+
+int get_t ()
+{
+    int val = get_n();
+
+    while (*s == '*' || *s == '/')
+    {
+        char op = *s;
+        s++;
+        int val2 = get_n();
+        if (op == '*')  
+            val *= val2;
+        else 
+            val /= val2;
+    }
+
+    return val;
+}
+
+int get_n ()
+{
+    char* old_s = s;
+
+    int val = 0;
+    while ('0' <= *s && *s <= '9')
+    {
+        val = val * 10 + (*s - '0');
+        s++;
+    }
+    if (old_s == s)
+        SYNTAX_ERROR;
+    
+    return val;
 }

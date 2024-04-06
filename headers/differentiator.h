@@ -23,7 +23,10 @@ enum operation
     DIV = '/', 
     LN = 'l', 
     EXP = 'e',
-    POW = '^'
+    POW = '^',
+    SIN = 's',
+    COS = 'c',
+    TG = 't'
 };
 
 union data

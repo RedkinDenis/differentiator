@@ -17,4 +17,8 @@ err importTree (FILE* read ,Node* head);
 
 err draw_tree (Node* tree);
 
+err fill_buffer (FILE* read, char** buf);
+
+int get_g (const char* str);
+
 #endif // INPUT_OTPUT_H
