@@ -14,7 +14,7 @@
     subtree = NULL;             \
     } while (0)
 
-#define DEFUALT_NODE create_node(DEFUALT, NULL, NULL, NULL)
+
 
 static double calculator (Node* tree, int* var = NULL);
 
@@ -75,8 +75,6 @@ int main ()
     
     fill_buffer(read, &buffer);
 
-    printf("%s\n", buffer);
-
     // printf("ans - %d\n", get_g(buffer));
 
     Node* tree = get_g(buffer);
@@ -91,23 +89,18 @@ int main ()
     
 } 
 
-operation long_op_det (char* str)
+operation long_op_det (char* str, char** s)
 {
-    if (strcmp(str, "ln") == 0)
-        return LN;
+    #define LONG_OP_DET(enum, string, vr)                \
+    if (strncmp(string, str, strlen(string)) == 0)       \
+    {                                                    \
+        if (s != NULL)                                   \
+            *s += strlen(string);                        \
+        return enum;                                     \
+    }
+    #include "headers/long_op.h"
+    #undef LONG_OP_DET
 
-    else if (strcmp(str, "exp") == 0)
-        return EXP;
-
-    else if (strcmp(str, "sin") == 0)
-        return SIN;
-    
-    else if (strcmp(str, "cos") == 0)
-        return COS;
-    
-    else if (strcmp(str, "tg") == 0)
-        return TG;
-    
     return ERR;
 }
 
@@ -119,7 +112,7 @@ double calculator (Node* tree, int* var)
     // print_data(tree); printf(" ");
     if (tree->type == VAR)
     {
-        print_data(tree); printf(" ");
+        // print_data(tree); printf(" ");
         *var = 1;    
     }
 

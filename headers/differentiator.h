@@ -5,6 +5,8 @@
 #include "..\..\err_codes.h"
 #define DATA_LEN 40
 
+#define DEFUALT_NODE create_node(DEFUALT, NULL, NULL, NULL)
+
 #define OP_DEFINITOR            \
     operation add = ADD;        \
     operation mul = MUL;        \
@@ -70,6 +72,8 @@ Node* diff (const Node* node);
 void simplifier (Node* tree);
 
 Node* create_node (data_t type, void* data, Node* left, Node* right);
+
+operation long_op_det (char* str, char** s = NULL);
 
 #endif //DIFFERENTIATOR_H
 

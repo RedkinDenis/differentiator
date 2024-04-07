@@ -12,6 +12,19 @@
 
 #define SYNTAX_ERROR printf("SYNTAX ERROR!!!\n");
 
+#define REQUIRE(r)          \
+    do                      \
+    {                       \
+        if (**s == r)       \
+            *s += 1;        \
+        else                \
+        {                   \
+            SYNTAX_ERROR    \
+            printf("%d", __LINE__); \
+        }                           \
+    } while (0)             
+
+
 #define CHANGE_NODE(from, to)        \
     do                               \
     {                                \
@@ -45,6 +58,8 @@ static Node* get_t (char** s);
 static Node* get_e (char** s);
 
 static Node* get_p (char** s);
+
+static Node* get_f (char** s);
 
 int GetFileSize(FILE* fp)
 {
@@ -425,13 +440,10 @@ void draw_tree_2 (FILE* save, Node* tree)
 
 Node* get_g (const char* str)
 {
-    char* s = (char*)str;
-    Node* val = get_e(&s);
+    char** s = (char**)&str;
+    Node* val = get_e(s);
 
-    if (*s = '$')
-        s++;
-    else 
-        SYNTAX_ERROR
+    REQUIRE('$');
 
     return val;
 }
@@ -458,13 +470,13 @@ Node* get_e (char** s)
 Node* get_t (char** s)
 {
     OP_DEFINITOR
-    Node* val = get_p(s);
+    Node* val = get_f(s);
 
     while (**s == '*' || **s == '/')
     {
         char op = **s;
         *s += 1;
-        Node* val2 = get_p(s);
+        Node* val2 = get_f(s);
         if (op == '*')  
             val = create_node(OPERAND, &mul, val, val2);
         else 
@@ -474,11 +486,31 @@ Node* get_t (char** s)
     return val;
 }
 
-// Node* get_f (char** s)
-// {
-//     OP_DEFINITOR
-//     Node* val = get_p
-// }
+Node* get_f (char** s)
+{
+    OP_DEFINITOR
+    operation foo = long_op_det(*s, s);
+
+    if (foo != ERR)
+    {
+        Node* var = NULL;
+
+        REQUIRE('(');
+        switch (foo)
+        {
+            #define LONG_OP_DET(enum, string, vr)                               \
+            case enum:                                                          \
+                var = create_node(LONG_OPERAND, vr, DEFUALT_NODE, get_e(s));    \
+                break;
+            #include "headers/long_op.h"
+            #undef LONG_OP_DET
+        }
+        REQUIRE(')');
+        return var;
+    }
+    else
+        return get_p(s);
+}
 
 Node* get_p (char** s)
 {
@@ -486,10 +518,9 @@ Node* get_p (char** s)
     {
         *s += 1;
         Node* val = get_e(s);
-        if (**s = ')')
-            *s += 1;
-        else 
-            SYNTAX_ERROR
+
+        REQUIRE(')');
+
         return val;
     }
     else 

@@ -1,0 +1,5 @@
+LONG_OP_DET(LN, "ln", ln)
+LONG_OP_DET(EXP, "exp", exp)
+LONG_OP_DET(SIN, "sin", sin)
+LONG_OP_DET(COS, "cos", cos)
+LONG_OP_DET(TG, "tg", tg)
