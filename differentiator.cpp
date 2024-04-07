@@ -7,18 +7,6 @@
 #include <string.h>
 #include <windows.h>
 
-#define OP_DEFINITOR            \
-    operation add = ADD;        \
-    operation mul = MUL;        \
-    operation sub = SUB;        \
-    operation div = DIV;        \
-    operation pow = POW;        \
-    char* exp = (char*)"exp";   \
-    char* ln = (char*)"ln";     \
-    char* sin = (char*)"sin";   \
-    char* cos = (char*)"cos";   \
-    char* tg = (char*)"tg";   
-
 #define FREE_SUBTREE(subtree)   \
     do                          \
     {                           \
@@ -34,7 +22,7 @@ static void dump (Node* tree);
 
 static Node* copy_subtree (Node* sub_tree);
 
-static Node* create_node (data_t type, void* data, Node* left, Node* right);
+// static Node* create_node (data_t type, void* data, Node* left, Node* right);
 
 static void calc_simplifier (Node* tree, int* changed);
 
@@ -89,7 +77,16 @@ int main ()
 
     printf("%s\n", buffer);
 
-    printf("ans - %d\n", get_g(buffer));
+    // printf("ans - %d\n", get_g(buffer));
+
+    Node* tree = get_g(buffer);
+    // print_tree(tree);
+    draw_tree(tree);
+
+    Node* Diff = diff(tree);
+    simplifier(Diff);
+    Sleep(1000);
+    draw_tree(Diff);
 
     
 } 

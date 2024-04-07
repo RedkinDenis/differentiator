@@ -5,6 +5,18 @@
 #include "..\..\err_codes.h"
 #define DATA_LEN 40
 
+#define OP_DEFINITOR            \
+    operation add = ADD;        \
+    operation mul = MUL;        \
+    operation sub = SUB;        \
+    operation div = DIV;        \
+    operation pow = POW;        \
+    char* exp = (char*)"exp";   \
+    char* ln = (char*)"ln";     \
+    char* sin = (char*)"sin";   \
+    char* cos = (char*)"cos";   \
+    char* tg = (char*)"tg";   
+
 enum data_t
 {
     NUM = 1,
@@ -52,8 +64,12 @@ struct Node
 };
 
 err tree_kill (Node* head);
+
 Node* diff (const Node* node);
+
 void simplifier (Node* tree);
+
+Node* create_node (data_t type, void* data, Node* left, Node* right);
 
 #endif //DIFFERENTIATOR_H
 

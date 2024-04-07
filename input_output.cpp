@@ -32,22 +32,19 @@ static err print_tree__ (Node* head, int* tab);
 
 static err fprint_tree__ (FILE* out, Node* head, int* tab);
 
-// static void print_data (Node* head);
-
 static int check_var (const char* data_buffer);
 
 static void draw_tree_1 (FILE* save, Node* tree, int* node_num);
 
 static void draw_tree_2 (FILE* save, Node* tree);
 
-static int get_n ();
+static Node* get_n (char** s);
 
-static int get_t ();
+static Node* get_t (char** s);
 
-static int get_e ();
+static Node* get_e (char** s);
 
-
-static char* s = NULL;
+static Node* get_p (char** s);
 
 int GetFileSize(FILE* fp)
 {
@@ -426,66 +423,104 @@ void draw_tree_2 (FILE* save, Node* tree)
 }
 
 
-int get_g (const char* str)
+Node* get_g (const char* str)
 {
-    s = (char*)str;
-    int val = get_e();
+    char* s = (char*)str;
+    Node* val = get_e(&s);
 
     if (*s = '$')
         s++;
     else 
         SYNTAX_ERROR
+
     return val;
 }
 
-int get_e ()
+Node* get_e (char** s)
 {
-    int val = get_t();
+    OP_DEFINITOR
+    Node* val = get_t(s);
 
-    while (*s == '+' || *s == '-')
+    while (**s == '+' || **s == '-')
     {
-        char op = *s;
-        s++;
-        int val2 = get_t();
+        char op = **s;
+        *s += 1;
+        Node* val2 = get_t(s);
         if (op == '+')  
-            val += val2;
+            val = create_node(OPERAND, &add, val, val2);
         else 
-            val -= val2;
+            val = create_node(OPERAND, &sub, val, val2);
     }
-    
+
     return val;
 }
 
-int get_t ()
+Node* get_t (char** s)
 {
-    int val = get_n();
+    OP_DEFINITOR
+    Node* val = get_p(s);
 
-    while (*s == '*' || *s == '/')
+    while (**s == '*' || **s == '/')
     {
-        char op = *s;
-        s++;
-        int val2 = get_n();
+        char op = **s;
+        *s += 1;
+        Node* val2 = get_p(s);
         if (op == '*')  
-            val *= val2;
+            val = create_node(OPERAND, &mul, val, val2);
         else 
-            val /= val2;
+            val = create_node(OPERAND, &div, val, val2);
     }
 
     return val;
 }
 
-int get_n ()
-{
-    char* old_s = s;
+// Node* get_f (char** s)
+// {
+//     OP_DEFINITOR
+//     Node* val = get_p
+// }
 
-    int val = 0;
-    while ('0' <= *s && *s <= '9')
+Node* get_p (char** s)
+{
+    if (**s == '(')
     {
-        val = val * 10 + (*s - '0');
-        s++;
+        *s += 1;
+        Node* val = get_e(s);
+        if (**s = ')')
+            *s += 1;
+        else 
+            SYNTAX_ERROR
+        return val;
     }
-    if (old_s == s)
-        SYNTAX_ERROR;
-    
+    else 
+    {
+        Node* val = get_n(s);
+        return val;
+    }
+}
+
+Node* get_n (char** s)
+{
+    char* old_s = *s;
+
+    Node* val = (Node*)calloc(1, sizeof(Node));
+    val->type = NUM;
+    if (isalpha(**s))
+    {
+        val->type = VAR;
+        val->data.var = (char*)calloc(2, sizeof(char));
+        val->data.var[0] = **s;
+        *s += 1;
+    }
+    else
+    {
+        while ('0' <= **s && **s <= '9')
+        {
+            val->data.value = val->data.value * 10 + (**s - '0');
+            *s += 1;
+        }
+        if (old_s == *s)
+            SYNTAX_ERROR;
+    }
     return val;
 }
