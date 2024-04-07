@@ -51,6 +51,8 @@ static void draw_tree_1 (FILE* save, Node* tree, int* node_num);
 
 static void draw_tree_2 (FILE* save, Node* tree);
 
+static void skip_spaces (char** str);
+
 static Node* get_n (char** s);
 
 static Node* get_t (char** s);
@@ -437,12 +439,19 @@ void draw_tree_2 (FILE* save, Node* tree)
     return;
 }
 
+void skip_spaces (char** str)
+{
+    while (**str == ' ')
+        *str += 1;
+}
 
 Node* get_g (const char* str)
 {
     char** s = (char**)&str;
+    skip_spaces(s);
     Node* val = get_e(s);
 
+    skip_spaces(s);
     REQUIRE('$');
 
     return val;
@@ -452,17 +461,20 @@ Node* get_e (char** s)
 {
     OP_DEFINITOR
     Node* val = get_t(s);
+    skip_spaces(s);
 
     while (**s == '+' || **s == '-')
     {
         char op = **s;
         *s += 1;
+        skip_spaces(s);
         Node* val2 = get_t(s);
         if (op == '+')  
             val = create_node(OPERAND, &add, val, val2);
         else 
             val = create_node(OPERAND, &sub, val, val2);
     }
+    skip_spaces(s);
 
     return val;
 }
@@ -482,6 +494,7 @@ Node* get_t (char** s)
         else 
             val = create_node(OPERAND, &div, val, val2);
     }
+    skip_spaces(s);
 
     return val;
 }
@@ -489,7 +502,9 @@ Node* get_t (char** s)
 Node* get_f (char** s)
 {
     OP_DEFINITOR
+    skip_spaces(s);
     operation foo = long_op_det(*s, s);
+    skip_spaces(s);
 
     if (foo != ERR)
     {
@@ -505,7 +520,9 @@ Node* get_f (char** s)
             #include "headers/long_op.h"
             #undef LONG_OP_DET
         }
+        skip_spaces(s);
         REQUIRE(')');
+        skip_spaces(s);
         return var;
     }
     else
@@ -514,10 +531,13 @@ Node* get_f (char** s)
 
 Node* get_p (char** s)
 {
+    skip_spaces(s);
     if (**s == '(')
     {
         *s += 1;
+        skip_spaces(s);
         Node* val = get_e(s);
+        skip_spaces(s);
 
         REQUIRE(')');
 
@@ -532,10 +552,13 @@ Node* get_p (char** s)
 
 Node* get_n (char** s)
 {
+    skip_spaces(s);
     char* old_s = *s;
 
     Node* val = (Node*)calloc(1, sizeof(Node));
     val->type = NUM;
+
+    skip_spaces(s);
     if (isalpha(**s))
     {
         val->type = VAR;
@@ -553,5 +576,6 @@ Node* get_n (char** s)
         if (old_s == *s)
             SYNTAX_ERROR;
     }
+    skip_spaces(s);
     return val;
 }
