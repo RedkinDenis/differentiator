@@ -4,6 +4,7 @@
 #include <stdio.h> 
 #include "..\..\err_codes.h"
 #include "differentiator.h"
+#include "../headers/DSL.h"
 
 int GetFileSize(FILE* fp);
 

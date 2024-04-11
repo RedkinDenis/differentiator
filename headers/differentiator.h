@@ -2,22 +2,10 @@
 #define DIFFERENTIATOR_H
 
 #include <cstddef>
-#include "..\..\err_codes.h"
+#include "..\..\err_codes.h"   
+#include "../headers/DSL.h"
+
 #define DATA_LEN 40
-
-#define DEFUALT_NODE create_node(DEFUALT, NULL, NULL, NULL)
-
-#define OP_DEFINITOR            \
-    operation add = ADD;        \
-    operation mul = MUL;        \
-    operation sub = SUB;        \
-    operation div = DIV;        \
-    operation pow = POW;        \
-    char* exp = (char*)"exp";   \
-    char* ln = (char*)"ln";     \
-    char* sin = (char*)"sin";   \
-    char* cos = (char*)"cos";   \
-    char* tg = (char*)"tg";   
 
 enum data_t
 {
@@ -65,9 +53,20 @@ struct Node
     int num_in_tree = 0;
 };
 
+static operation op_add = ADD;        
+static operation op_mul = MUL;        
+static operation op_sub = SUB;        
+static operation op_div = DIV;        
+static operation op_pow = POW;        
+static char* op_exp = (char*)"exp";   
+static char* op_ln = (char*)"ln";     
+static char* op_sin = (char*)"sin";   
+static char* op_cos = (char*)"cos";   
+static char* op_tg = (char*)"tg";   
+
 err tree_kill (Node* head);
 
-Node* diff (const Node* node);
+Node* diff (const Node* node, const char* part = "x");
 
 void simplifier (Node* tree);
 

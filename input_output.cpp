@@ -8,35 +8,6 @@
 #include "headers/input_output.h"
 #include "../UDL.h"
 
-#define GET_VARIABLE_NAME(variable) #variable
-
-#define SYNTAX_ERROR printf("SYNTAX ERROR!!!\n");
-
-#define REQUIRE(r)          \
-    do                      \
-    {                       \
-        if (**s == r)       \
-            *s += 1;        \
-        else                \
-        {                   \
-            SYNTAX_ERROR    \
-            printf("%d", __LINE__); \
-        }                           \
-    } while (0)             
-
-
-#define CHANGE_NODE(from, to)        \
-    do                               \
-    {                                \
-    Node* tree_temp_ = 0;            \
-    CALLOC(to, Node, 1);             \
-    tree_temp_ = from;               \
-    from = to;                       \
-    from->parent = tree_temp_;       \
-    level++;                         \
-    } while(0)
-
-
 static void get_data (char* buf, int* ptr, Node* tree, int data_len);
 
 static void goto_prace (char* buf, int* ptr);
@@ -62,6 +33,8 @@ static Node* get_e (char** s);
 static Node* get_p (char** s);
 
 static Node* get_f (char** s);
+
+static Node* get_d (char** s);
 
 int GetFileSize(FILE* fp)
 {
@@ -459,7 +432,6 @@ Node* get_g (const char* str)
 
 Node* get_e (char** s)
 {
-    OP_DEFINITOR
     Node* val = get_t(s);
     skip_spaces(s);
 
@@ -470,9 +442,34 @@ Node* get_e (char** s)
         skip_spaces(s);
         Node* val2 = get_t(s);
         if (op == '+')  
-            val = create_node(OPERAND, &add, val, val2);
+            val = create_node(OPERAND, &op_add, val, val2);
         else 
-            val = create_node(OPERAND, &sub, val, val2);
+            val = create_node(OPERAND, &op_sub, val, val2);
+    }
+    skip_spaces(s);
+
+    return val;
+}
+
+Node* get_d (char** s)
+{
+    Node* val = get_f(s);
+
+    while (**s == '^')
+    {
+        char op = **s;
+        *s += 1;
+
+        skip_spaces(s);
+        REQUIRE('(');
+        *s -= 1;
+        skip_spaces(s);
+
+        Node* val2 = get_f(s);
+
+        val = create_node(OPERAND, &op_pow, val, val2);
+
+        skip_spaces(s);
     }
     skip_spaces(s);
 
@@ -481,18 +478,17 @@ Node* get_e (char** s)
 
 Node* get_t (char** s)
 {
-    OP_DEFINITOR
-    Node* val = get_f(s);
+    Node* val = get_d(s);
 
     while (**s == '*' || **s == '/')
     {
         char op = **s;
         *s += 1;
-        Node* val2 = get_f(s);
+        Node* val2 = get_d(s);
         if (op == '*')  
-            val = create_node(OPERAND, &mul, val, val2);
+            val = create_node(OPERAND, &op_mul, val, val2);
         else 
-            val = create_node(OPERAND, &div, val, val2);
+            val = create_node(OPERAND, &op_div, val, val2);
     }
     skip_spaces(s);
 
@@ -501,7 +497,6 @@ Node* get_t (char** s)
 
 Node* get_f (char** s)
 {
-    OP_DEFINITOR
     skip_spaces(s);
     operation foo = long_op_det(*s, s);
     skip_spaces(s);
@@ -568,9 +563,21 @@ Node* get_n (char** s)
     }
     else
     {
+        char sign = '+';
+        if (**s == '-')
+        {
+            sign = '-';
+            *s += 1;
+        }
+
         while ('0' <= **s && **s <= '9')
         {
-            val->data.value = val->data.value * 10 + (**s - '0');
+            if (sign == '+')
+                val->data.value = val->data.value * 10 + (**s - '0');
+
+            else 
+                val->data.value = val->data.value * 10 - (**s - '0');
+
             *s += 1;
         }
         if (old_s == *s)
