@@ -50,9 +50,13 @@ int main ()
     draw_tree(tree);
 
     Node* Diff = diff(tree, "x");
+    Sleep(1000);
+    draw_tree(Diff);
     simplifier(Diff);
     Sleep(1000);
     draw_tree(Diff);
+
+    printf("%s\n", tex_tree(Diff));
 
     tree_kill(Diff);
     tree_kill(tree);
@@ -76,13 +80,13 @@ operation long_op_det (char* str, char** s)
 double calculator (Node* tree, int* var)
 {
     if (tree == NULL)
-        return 0;
+        return 10;
 
     if (tree->type == VAR)
         *var = 10; 
 
     if (var != NULL && *var == 1)
-        return 0;
+        return 10;
 
     if (tree->type == OPERAND)
     {

@@ -586,3 +586,41 @@ Node* get_n (char** s)
     skip_spaces(s);
     return val;
 }
+
+#define SPRINTF(buf_size, ...)                                                                                      \
+    do                                                                                                              \
+    {                                                                                                               \
+    int i = 0;                                                                                                      \
+    while (sprintf(__VA_ARGS__) >= buf_size * i)                                                                    \
+    {                                                                                                               \
+        i++;                                                                                                        \
+        buf = (char*)realloc(buf, strlen(buf) * i);                                                                 \
+    }                                                                                                               \
+    } while(0)
+
+
+char* tex_tree (Node* tree)
+{
+    int buf_size = 100;
+    char* buf = (char*)calloc(buf_size, sizeof(char));
+
+    if (tree->type == OPERAND)
+    {
+        SPRINTF(buf_size, buf, "(%s %c %s) ", tex_tree(tree->left), tree->data.operand, tex_tree(tree->right));
+        return buf;
+    }
+    
+    else if (tree->type == NUM)
+    {
+        SPRINTF(buf_size, buf, "%lf", tree->data.value);
+        return buf;
+    }
+
+    else if (tree->type == VAR)
+    {
+        SPRINTF(buf_size, buf, "%s", tree->data.var);
+        return buf;
+    }
+
+    return (char*)"UNKNOWN";
+}
