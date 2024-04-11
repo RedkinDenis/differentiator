@@ -1,2 +1,2 @@
 all:
-	g++ differentiator.cpp input_output.cpp -o diff.exe
+	g++ differentiator.cpp input_output.cpp tex_out.cpp -o diff.exe

@@ -1,5 +1,7 @@
 #include "headers/differentiator.h"
 #include "headers/input_output.h"
+#include "headers/tex_out.h"
+
 #include "..\UDL.h"
 #include <stdlib.h>
 #include <malloc.h>
@@ -7,7 +9,6 @@
 #include <string.h>
 #include <windows.h>
 
-// дефайлинить копирование элемента
 // доп: сделать тех процесса дифференцирования
 // доп: формула тейлора
 // доп: полный дифференциал
@@ -47,14 +48,13 @@ int main ()
 
     Node* tree = get_g(buffer);
     simplifier(tree);
-    draw_tree(tree);
+    // draw_tree(tree);
 
-    Node* Diff = diff(tree, "x");
-    simplifier(Diff);
-    Sleep(1000);
-    draw_tree(Diff);
+    // Node* Diff = diff(tree, "x");
 
-    tree_kill(Diff);
+    diff_tex(tree);
+
+    // tree_kill(Diff);
     tree_kill(tree);
 } 
 
@@ -76,13 +76,13 @@ operation long_op_det (char* str, char** s)
 double calculator (Node* tree, int* var)
 {
     if (tree == NULL)
-        return 0;
+        return 10;
 
     if (tree->type == VAR)
         *var = 10; 
 
     if (var != NULL && *var == 1)
-        return 0;
+        return 10;
 
     if (tree->type == OPERAND)
     {

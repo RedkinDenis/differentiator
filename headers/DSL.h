@@ -43,4 +43,17 @@
 #define COPY_LEFT  copy_subtree(node->left)
 #define COPY_RIGHT copy_subtree(node->right)
 
+#define SPRINTF(...)                                                                                                \
+    do                                                                                                              \
+    {                                                                                                               \
+    int i = 2;                                                                                                      \
+    while (sprintf_s(__VA_ARGS__) == -1)                                                                            \
+    {                                                                                                               \
+        free(buf);                                                                                                  \
+        buf = (char*)calloc(buf_size * i, sizeof(char));                                                            \
+        i++;                                                                                                        \
+        printf("here");                                                                                             \
+    }                                                                                                               \
+    } while(0)
+
 #endif // DSL_L
