@@ -75,5 +75,3 @@ Node* create_node (data_t type, void* data, Node* left, Node* right);
 operation long_op_det (char* str, char** s = NULL);
 
 #endif //DIFFERENTIATOR_H
-
-

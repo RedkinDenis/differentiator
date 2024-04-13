@@ -130,7 +130,7 @@ err diff_tex (Node* tree)
     copy_file("tex/equation.tex", "tex/title.tex", "ab");
 
     FOPEN(out, "tex/equation.tex", "ab");
-    fprintf(out, "Вычислим полный дифференциал следующей функции:\n");
+    fprintf(out, "???????? ?????? ???????????? ????????? ???????:\n");
     equation_tex(out, tree);
 
     vars vars = {};
@@ -139,7 +139,7 @@ err diff_tex (Node* tree)
 
     for (int i = 0; i < vars.qant; i++)
     {
-        fprintf(out, "Найдем производную по %s\n", vars.data[i]);
+        fprintf(out, "?????? ??????????? ?? %s\n", vars.data[i]);
         full_diff(out, tree, vars.data[i]);
     }
 
@@ -167,7 +167,7 @@ void full_der (FILE* out, Node* tree, vars* vars)
 {
     Node* Diff = NULL;
 
-    fprintf(out, "Полный дифференциал: \n");
+    fprintf(out, "?????? ????????????: \n");
     fprintf(out, "\n\n%s", "\\begin{dmath}");
     fprintf(out, "\n d(%s) = ", equation_tex_(tree));
 
