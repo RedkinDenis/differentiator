@@ -3,6 +3,7 @@
 #include "headers/DSL.h"
 #include "..\UDL.h"
 #include "..\err_codes.h"
+#include "headers/stack.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -20,9 +21,9 @@ static err derivative_tex (FILE* out, Node* tree, const char* part);
 
 static void equation_tex (FILE* out, Node* tree);
 
-static char* equation_tex__ (Node* tree, int* br);
+static char* equation_tex__ (Node* tree, int* br, Stack* mem_stk);
 
-static char* equation_tex_ (Node* tree);
+static char* equation_tex_ (Node* tree, Stack* mem_stk);
 
 static void dump_vars (vars* vars);
 
@@ -36,16 +37,17 @@ static void full_der (FILE* out, Node* tree, vars* vars);
 
 static void full_diff (FILE* out, Node* tree, char* part);
 
-char* equation_tex_ (Node* tree)
+char* equation_tex_ (Node* tree, Stack* mem_stk)
 {
     int br = 0;
-    return equation_tex__(tree, &br);
+    return equation_tex__(tree, &br, mem_stk);    // слишкок рано уничтожаю стек
 }
 
-char* equation_tex__ (Node* tree, int* br)
+char* equation_tex__ (Node* tree, int* br, Stack* mem_stk)
 {
-    int buf_size = 100;
+    int buf_size = 10000;
     char* buf = (char*)calloc(buf_size, sizeof(char));
+    stack_push(mem_stk, &buf);
 
     if (tree->data.operand == MUL || tree->data.operand == DIV)
     {
@@ -57,17 +59,24 @@ char* equation_tex__ (Node* tree, int* br)
     {
         if (tree->data.operand == DIV)
         {
-            SPRINTF(buf, buf_size, "\\cfrac {%s} {%s}", equation_tex__(tree->left, br), equation_tex__(tree->right, br));
+            SPRINTF(buf, buf_size, "\\cfrac {%s} {%s}", equation_tex__(tree->left, br, mem_stk), equation_tex__(tree->right, br, mem_stk));
         }
         else  if (*br == 1 && (tree->data.operand == ADD || tree->data.operand == SUB))
         {
-            SPRINTF(buf, buf_size, "(%s %c %s) ", equation_tex__(tree->left, br), tree->data.operand, equation_tex__(tree->right, br));
+            SPRINTF(buf, buf_size, "(%s %c %s) ", equation_tex__(tree->left, br, mem_stk), tree->data.operand, equation_tex__(tree->right, br, mem_stk));
             *br = 0;
         }
         else 
         {
-            SPRINTF(buf, buf_size, "%s %c %s ", equation_tex__(tree->left, br), tree->data.operand, equation_tex__(tree->right, br));
+            SPRINTF(buf, buf_size, "%s %c %s ", equation_tex__(tree->left, br, mem_stk), tree->data.operand, equation_tex__(tree->right, br, mem_stk));
         }
+
+        return buf;
+    }
+    else if (tree->type == FUNCTION)
+    {
+        *br = 0;
+        SPRINTF(buf, buf_size, "%s(%s) ", tree->data.function, equation_tex__(tree->right, br, mem_stk));
 
         return buf;
     }
@@ -110,18 +119,28 @@ err derivative_tex (FILE* out, Node* tree, const char* part)
     Node* Diff = diff(tree, part);
     simplifier(Diff);
 
+    Stack mem_stk = {};
+    stack_ctor(&mem_stk, 1);
+
     fprintf(out, "\n\n%s", "\\begin{dmath}");
-    fprintf(out, "\n \\cfrac {d} {d %s}(%s) = %s", part, equation_tex_(tree), equation_tex_(Diff));
+    fprintf(out, "\n \\cfrac {d} {d %s}(%s) = %s", part, equation_tex_(tree, &mem_stk), equation_tex_(Diff, &mem_stk));
     fprintf(out, "\n%s\n\n", "\\end{dmath}");
+
+    stack_dtor(&mem_stk);
 
     return SUCCESS;
 }
 
 void equation_tex (FILE* out, Node* tree)
 {
+    Stack mem_stk = {};
+    stack_ctor(&mem_stk, 1);
+
     fprintf(out, "\n\n%s", "\\begin{dmath}");
-    fprintf(out, "\n%s", equation_tex_(tree));
+    fprintf(out, "\n%s", equation_tex_(tree, &mem_stk));
     fprintf(out, "\n%s\n\n", "\\end{dmath}");
+
+    stack_dtor(&mem_stk);
 }
 
 err diff_tex (Node* tree)
@@ -130,7 +149,8 @@ err diff_tex (Node* tree)
     copy_file("tex/equation.tex", "tex/title.tex", "ab");
 
     FOPEN(out, "tex/equation.tex", "ab");
-    fprintf(out, "???????? ?????? ???????????? ????????? ???????:\n");
+    fprintf(out, "Вычислим производную слудующего выражения:\n");
+    
     equation_tex(out, tree);
 
     vars vars = {};
@@ -139,7 +159,7 @@ err diff_tex (Node* tree)
 
     for (int i = 0; i < vars.qant; i++)
     {
-        fprintf(out, "?????? ??????????? ?? %s\n", vars.data[i]);
+        fprintf(out, "Производная по %s\n", vars.data[i]);
         full_diff(out, tree, vars.data[i]);
     }
 
@@ -154,10 +174,10 @@ err diff_tex (Node* tree)
 
 void full_diff (FILE* out, Node* tree, char* part)
 {
-    if (tree->left != NULL)
+    if (tree->left != NULL && tree->left->type != DEFUALT)
         full_diff(out, tree->left, part);
     
-    if (tree->right != NULL)
+    if (tree->right != NULL && tree->right->type != DEFUALT)
         full_diff(out, tree->right, part);
 
     derivative_tex(out, tree, part);
@@ -167,16 +187,27 @@ void full_der (FILE* out, Node* tree, vars* vars)
 {
     Node* Diff = NULL;
 
-    fprintf(out, "?????? ????????????: \n");
+    Stack mem_stk = {};
+    stack_ctor(&mem_stk, 1);
+
+    fprintf(out, "Полный дифференциал: \n");
     fprintf(out, "\n\n%s", "\\begin{dmath}");
-    fprintf(out, "\n d(%s) = ", equation_tex_(tree));
+    fprintf(out, "\n d(%s) = ", equation_tex_(tree, &mem_stk));
+
+    stack_dtor(&mem_stk);
+
+    // printf("vars.qant - %d\n", vars->qant);
 
     for (int i = 0; i < vars->qant; i++)
     {
         Diff = diff(tree, vars->data[i]);
         simplifier(Diff);
 
-        fprintf(out, "(%s)d%s", equation_tex_(Diff), vars->data[i]);
+        stack_ctor(&mem_stk, 1);
+
+        fprintf(out, "(%s)d%s", equation_tex_(Diff, &mem_stk), vars->data[i]);
+
+        stack_dtor(&mem_stk);
         
         if (i != vars->qant - 1)
             fprintf(out, " + ");
@@ -192,10 +223,10 @@ void find_vars (Node* tree ,vars* vars)
         add_var(vars, tree->data.var);
     }
 
-    if (tree->left != NULL)
+    if (tree->left != NULL && tree->left->type != DEFUALT)
         find_vars(tree->left, vars);
     
-    if (tree->right != NULL)
+    if (tree->right != NULL && tree->right->type != DEFUALT)
         find_vars(tree->right, vars);
 }
 

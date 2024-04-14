@@ -12,7 +12,7 @@ enum data_t
     NUM = 1,
     VAR = 4,
     OPERAND = 2,
-    LONG_OPERAND = 3,
+    FUNCTION = 3,
     DEFUALT = 0
 };
 
@@ -35,7 +35,7 @@ union data
 {
     unsigned char operand;
     char* var;
-    char* long_operand;
+    char* function;
     double value;
 };
 
@@ -68,7 +68,7 @@ err tree_kill (Node* head);
 
 Node* diff (const Node* node, const char* part = "x");
 
-void simplifier (Node* tree);
+Node* simplifier (Node* tree);
 
 Node* create_node (data_t type, void* data, Node* left, Node* right);
 

@@ -49,6 +49,8 @@ int main ()
     Node* tree = get_g(buffer);
     simplifier(tree);
     // draw_tree(tree);
+    // Sleep(1000);
+    // draw_tree(simplifier(diff(tree)));
 
     // Node* Diff = diff(tree, "x");
 
@@ -116,9 +118,9 @@ double calculator (Node* tree, int* var)
                 break;            
         }
     }
-    else if (tree->type == LONG_OPERAND)
+    else if (tree->type == FUNCTION)
     {
-        switch (long_op_det(tree->data.long_operand))
+        switch (long_op_det(tree->data.function))
         {
             case LN:
                 return log(calculator(tree->right, var));
@@ -142,7 +144,7 @@ double calculator (Node* tree, int* var)
     return tree->data.value;
 }
 
-void simplifier (Node* tree)
+Node* simplifier (Node* tree)
 {
     int changed = 1;
     while (changed > 0)
@@ -151,6 +153,8 @@ void simplifier (Node* tree)
         calc_simplifier(tree, &changed);
         second_simplifier(tree, &changed);
     }     
+
+    return tree;
 }
 
 void calc_simplifier (Node* tree, int* changed)
@@ -167,8 +171,6 @@ void calc_simplifier (Node* tree, int* changed)
         FREE_SUBTREE(tree->right);
 
         *changed += 1;
-
-        // printf("1 ");
     }
     
     if (tree->left != NULL)
@@ -191,16 +193,12 @@ void second_simplifier (Node* tree, int* changed)
             FREE_SUBTREE(tree->right);
 
             *changed += 1;
-
-            // printf("2 ");
         }
         else if (tree->left->type == NUM && tree->left->data.value == 1)
         {
             FREE_SUBTREE(tree->left);
             memcpy(tree, tree->right, sizeof(Node));
             *changed += 1;
-
-            // printf("3 ");
         }
 
         else if (tree->right->type == NUM && tree->right->data.value == 1)
@@ -208,19 +206,28 @@ void second_simplifier (Node* tree, int* changed)
             FREE_SUBTREE(tree->right);
             memcpy(tree, tree->left, sizeof(Node));
             *changed += 1;
-
-            // printf("4 ");
         }
     }
-    else if (tree->type == OPERAND && tree->data.operand == '+')
+    else if (tree->type == OPERAND && tree->data.operand == '/')
+    {
+        if ((tree->left->type == NUM && tree->left->data.value == 0))
+        {
+            tree->type = NUM;
+            tree->data.value = 0;
+            
+            FREE_SUBTREE(tree->left);
+            FREE_SUBTREE(tree->right);
+
+            *changed += 1;
+        }
+    }
+    else if (tree->type == OPERAND && (tree->data.operand == '+' || tree->data.operand == '-'))
     {
         if (tree->left->type == NUM && tree->left->data.value == 0)
         {
             FREE_SUBTREE(tree->left);
             memcpy(tree, tree->right, sizeof(Node));
             *changed += 1;
-
-            // printf("5 ");
         }
 
         else if (tree->right->type == NUM && tree->right->data.value == 0)
@@ -228,8 +235,6 @@ void second_simplifier (Node* tree, int* changed)
             FREE_SUBTREE(tree->right);
             memcpy(tree, tree->left, sizeof(Node));
             *changed += 1;
-
-            // printf("6 ");
         }
     }
     
@@ -268,9 +273,9 @@ Node* create_node (data_t type, void* data, Node* left, Node* right)
         case OPERAND:
             newNode->data.operand = *(char*)data;
             break;
-        case LONG_OPERAND:
-            newNode->data.long_operand = (char*)calloc(strlen((char*)data), sizeof(char));
-            strcpy(newNode->data.long_operand, (char*)data);
+        case FUNCTION:
+            newNode->data.function = (char*)calloc(strlen((char*)data), sizeof(char));
+            strcpy(newNode->data.function, (char*)data);
             break;
         case DEFUALT:
             // printf("here\n");
@@ -323,8 +328,8 @@ Node* diff (const Node* node, const char* part)
                 case POW:
                     return diff_pow(node, part);
             }
-        case (LONG_OPERAND):
-            switch (long_op_det(node->data.long_operand))
+        case (FUNCTION):
+            switch (long_op_det(node->data.function))
             {
                 case LN:
                     return diff_ln(node, part);
@@ -384,7 +389,7 @@ Node* diff_pow (const Node* node, const char* part)
     {
         Node* cx = copy_subtree((Node*)node);
         Node* dx = DIFF_RIGHT;
-        Node* lna = create_node(LONG_OPERAND, op_ln, DEFUALT_NODE, COPY_LEFT);
+        Node* lna = create_node(FUNCTION, op_ln, DEFUALT_NODE, COPY_LEFT);
         Node* res = create_node(OPERAND, &op_mul, lna, create_node(OPERAND, &op_mul, cx, dx));
 
         return res;
@@ -404,7 +409,7 @@ Node* diff_pow (const Node* node, const char* part)
     }
     else 
     {
-        Node* middle = create_node(LONG_OPERAND, op_exp, DEFUALT_NODE, create_node(OPERAND, &op_mul, COPY_RIGHT, create_node(LONG_OPERAND, op_ln, DEFUALT_NODE, COPY_LEFT)));
+        Node* middle = create_node(FUNCTION, op_exp, DEFUALT_NODE, create_node(OPERAND, &op_mul, COPY_RIGHT, create_node(FUNCTION, op_ln, DEFUALT_NODE, COPY_LEFT)));
 
         return diff(middle, part);
     }
@@ -419,7 +424,7 @@ Node* diff_exp (const Node* node, const char* part)
 
 Node* diff_sin (const Node* node, const char* part)
 {
-    Node* dsin = create_node(LONG_OPERAND, op_cos, DEFUALT_NODE, COPY_RIGHT);
+    Node* dsin = create_node(FUNCTION, op_cos, DEFUALT_NODE, COPY_RIGHT);
     Node* dx = DIFF_RIGHT;
 
     Node* res = create_node(OPERAND, &op_mul, dsin, dx);
@@ -431,7 +436,7 @@ Node* diff_cos (const Node* node, const char* part)
 
     double temp = 1;
     Node* unit = create_node(NUM, &temp, NULL, NULL);
-    Node* Sin = create_node(LONG_OPERAND, op_sin, DEFUALT_NODE, COPY_RIGHT);
+    Node* Sin = create_node(FUNCTION, op_sin, DEFUALT_NODE, COPY_RIGHT);
     
     Node* dcos = create_node(OPERAND, &op_sub, unit, Sin);
     Node* dx = DIFF_RIGHT;
@@ -445,11 +450,11 @@ Node* diff_tg (const Node* node, const char* part)
 
     double one = 1;
     Node* unit = create_node(NUM, &one, NULL, NULL);
-    Node* Cos = create_node(LONG_OPERAND, op_cos, DEFUALT_NODE, COPY_RIGHT);
+    Node* Cos = create_node(FUNCTION, op_cos, DEFUALT_NODE, COPY_RIGHT);
 
     double two = 2;
     Node* Two = create_node(NUM, &two, NULL, NULL);
-    Node* cos2 = create_node(LONG_OPERAND, &op_pow, Cos, Two);
+    Node* cos2 = create_node(FUNCTION, &op_pow, Cos, Two);
     
     Node* dtg = create_node(OPERAND, &op_div, unit, cos2);
     Node* dx = DIFF_RIGHT;
@@ -476,8 +481,8 @@ err tree_kill (Node* head)
     if (head->right != NULL)
         return tree_kill(head->right);
 
-    if (head->type == LONG_OPERAND)
-        free(head->data.long_operand);
+    if (head->type == FUNCTION)
+        free(head->data.function);
 
     if (head->type == VAR)
         free(head->data.var);

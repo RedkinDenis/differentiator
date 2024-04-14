@@ -89,8 +89,8 @@ void print_data (Node* head)
     else if (head->type == OPERAND)
         printf("#%c#", head->data.operand); 
         
-    else if (head->type == LONG_OPERAND)
-        printf("#%s#", head->data.long_operand); 
+    else if (head->type == FUNCTION)
+        printf("#%s#", head->data.function); 
 
     else if (head->type == VAR)
         printf("#%s#", head->data.var); 
@@ -263,10 +263,10 @@ void get_data(char* buf, int* ptr, Node* tree, int data_len)
             tree->type = DEFUALT;
         }
         else
-            tree->type = LONG_OPERAND;
+            tree->type = FUNCTION;
 
-        tree->data.long_operand = (char*)calloc(strlen(data_buffer) + 1, sizeof(char));
-        strcpy(tree->data.long_operand, data_buffer);    
+        tree->data.function = (char*)calloc(strlen(data_buffer) + 1, sizeof(char));
+        strcpy(tree->data.function, data_buffer);    
     }
 
     free(data_buffer);
@@ -326,10 +326,10 @@ char* data_to_string (Node* tree)
         data = (char*)calloc(2, sizeof(char));
         sprintf(data, "%c", tree->data);
     }
-    else if (tree->type == LONG_OPERAND)
+    else if (tree->type == FUNCTION)
     {
-        data = (char*)calloc(strlen(tree->data.long_operand) + 1, sizeof(char));
-        strcpy(data, tree->data.long_operand);
+        data = (char*)calloc(strlen(tree->data.function) + 1, sizeof(char));
+        strcpy(data, tree->data.function);
     }    
     else if (tree->type == VAR)
     {
@@ -357,8 +357,8 @@ char* type_to_str (Node* tree)
         case VAR:
             strcpy(type, "VAR");
             break;
-        case LONG_OPERAND:
-            strcpy(type, "LONG_OPERAND");
+        case FUNCTION:
+            strcpy(type, "FUNCTION");
             break;
     }
     return type;
@@ -510,7 +510,7 @@ Node* get_f (char** s)
         {
             #define LONG_OP_DET(enum, string, vr)                               \
             case enum:                                                          \
-                var = create_node(LONG_OPERAND, vr, DEFUALT_NODE, get_e(s));    \
+                var = create_node(FUNCTION, vr, DEFUALT_NODE, get_e(s));    \
                 break;
             #include "headers/long_op.h"
             #undef LONG_OP_DET
