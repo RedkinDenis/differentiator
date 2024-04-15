@@ -6,6 +6,7 @@
 #include "headers/stack.h"
 
 #include <stdlib.h>
+#include <time.h>
 #include <string.h>
 
 struct vars 
@@ -19,7 +20,7 @@ static err copy_file (const char* to, const char* from, const char* mode);
 
 static err derivative_tex (FILE* out, Node* tree, const char* part);
 
-static void equation_tex (FILE* out, Node* tree);
+static void equation_tex (FILE* out, Node* tree, Data* data);
 
 static char* equation_tex__ (Node* tree, int* br, Stack* mem_stk);
 
@@ -33,14 +34,18 @@ static void create_vars (vars* vars, int capacity);
 
 static void find_vars (Node* tree ,vars* vars);
 
-static void full_der (FILE* out, Node* tree, vars* vars);
+static void full_der (FILE* out, Node* tree, vars* vars, Data* data);
 
-static void full_diff (FILE* out, Node* tree, char* part);
+static void full_diff (FILE* out, Node* tree, char* part, Data* data);
+
+static void tex_random_phrase (FILE* tex, Data* data);
+
+static void clear_data (Data* data);
 
 char* equation_tex_ (Node* tree, Stack* mem_stk)
 {
     int br = 0;
-    return equation_tex__(tree, &br, mem_stk);    // слишкок рано уничтожаю стек
+    return equation_tex__(tree, &br, mem_stk);
 }
 
 char* equation_tex__ (Node* tree, int* br, Stack* mem_stk)
@@ -131,11 +136,12 @@ err derivative_tex (FILE* out, Node* tree, const char* part)
     return SUCCESS;
 }
 
-void equation_tex (FILE* out, Node* tree)
+void equation_tex (FILE* out, Node* tree, Data* data)
 {
     Stack mem_stk = {};
     stack_ctor(&mem_stk, 1);
 
+    tex_random_phrase(out, data);
     fprintf(out, "\n\n%s", "\\begin{dmath}");
     fprintf(out, "\n%s", equation_tex_(tree, &mem_stk));
     fprintf(out, "\n%s\n\n", "\\end{dmath}");
@@ -148,10 +154,11 @@ err diff_tex (Node* tree)
     copy_file("tex/equation.tex", "tex/preambule_article.tex", "wb");
     copy_file("tex/equation.tex", "tex/title.tex", "ab");
 
+    Data data = input_data("tex/phrases.txt");
     FOPEN(out, "tex/equation.tex", "ab");
     fprintf(out, "¬ычислим производную слудующего выражени€:\n");
     
-    equation_tex(out, tree);
+    equation_tex(out, tree, &data);
 
     vars vars = {};
     create_vars(&vars, 3);
@@ -160,10 +167,10 @@ err diff_tex (Node* tree)
     for (int i = 0; i < vars.qant; i++)
     {
         fprintf(out, "ѕроизводна€ по %s\n", vars.data[i]);
-        full_diff(out, tree, vars.data[i]);
+        full_diff(out, tree, vars.data[i], &data);
     }
 
-    full_der(out, tree, &vars);
+    full_der(out, tree, &vars, &data);
 
     fclose(out);
 
@@ -172,18 +179,19 @@ err diff_tex (Node* tree)
     return SUCCESS;
 }
 
-void full_diff (FILE* out, Node* tree, char* part)
+void full_diff (FILE* out, Node* tree, char* part, Data* data)
 {
     if (tree->left != NULL && tree->left->type != DEFUALT)
-        full_diff(out, tree->left, part);
+        full_diff(out, tree->left, part, data);
     
     if (tree->right != NULL && tree->right->type != DEFUALT)
-        full_diff(out, tree->right, part);
+        full_diff(out, tree->right, part, data);
 
+    tex_random_phrase(out, data);
     derivative_tex(out, tree, part);
 }
 
-void full_der (FILE* out, Node* tree, vars* vars)
+void full_der (FILE* out, Node* tree, vars* vars, Data* data)
 {
     Node* Diff = NULL;
 
@@ -205,6 +213,7 @@ void full_der (FILE* out, Node* tree, vars* vars)
 
         stack_ctor(&mem_stk, 1);
 
+        tex_random_phrase(out, data);
         fprintf(out, "(%s)d%s", equation_tex_(Diff, &mem_stk), vars->data[i]);
 
         stack_dtor(&mem_stk);
@@ -260,4 +269,70 @@ void dump_vars (vars* vars)
 
     for (int i = 0; i < vars->qant; i++)
         printf("%s ", vars->data[i]);
+}
+
+Data input_data (const char* file_name)
+{
+    srand( (unsigned)time(NULL) );
+    FILE* input = fopen(file_name, "rb");
+    int fsize = GetFileSize(input);
+
+    char* buffer = NULL;
+    fill_buffer(input, &buffer);
+
+    char* buffer_cp = buffer;
+
+    // printf ("Buffer: \n %s", buffer);
+
+    fclose(input);
+
+    Data data = {};
+
+    for (int i = 0; i < fsize + 1; i++)
+        if (buffer[i] == '\n' && buffer[i - 1] == '\r')
+        {
+            data.quant += 1;
+            buffer[i] = '\0';
+            buffer[i - 1] = '\0';
+        }
+
+    data.lines = (line*)calloc(data.quant, sizeof(line));
+
+    if (buffer[fsize - 1] != '\n')
+        data.quant += 1;
+
+    for (int i = 0; i < data.quant; i++)
+    {
+        data.lines[i].str = strdup(buffer);
+        data.lines[i].len = strlen(buffer);
+        buffer += strlen(buffer);
+
+        while (*buffer == '\0') 
+            buffer++;
+    }
+
+    free(buffer_cp);
+
+    return data;
+}
+
+void tex_random_phrase (FILE* tex, Data* data)
+{
+    fprintf(tex, "\n%s\n", data->lines[rand() % data->quant].str);
+}
+
+void clear_data (Data* data)
+{
+    for (int i = 0; i < data->quant; i++)
+        free(data->lines[i].str);
+
+    free(data->lines);
+    free(data);
+}
+
+void dump_data (Data* data)
+{
+    printf ("qant - %d \n", data->quant);
+    for (int i = 0; i < data->quant; i++)
+        printf("%s \n", data->lines[i].str);
 }
