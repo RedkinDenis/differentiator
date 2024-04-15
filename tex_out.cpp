@@ -42,6 +42,8 @@ static void tex_random_phrase (FILE* tex, Data* data);
 
 static void clear_data (Data* data);
 
+static void tex_teylor (FILE* out, Node* tree, vars* vars, Data* data, int accuracy);
+
 char* equation_tex_ (Node* tree, Stack* mem_stk)
 {
     int br = 0;
@@ -71,6 +73,10 @@ char* equation_tex__ (Node* tree, int* br, Stack* mem_stk)
             SPRINTF(buf, buf_size, "(%s %c %s) ", equation_tex__(tree->left, br, mem_stk), tree->data.operand, equation_tex__(tree->right, br, mem_stk));
             *br = 0;
         }
+        else if (tree->data.operand == '^')
+        {
+            SPRINTF(buf, buf_size, "%s %c {%s} ", equation_tex__(tree->left, br, mem_stk), tree->data.operand, equation_tex__(tree->right, br, mem_stk));
+        }
         else 
         {
             SPRINTF(buf, buf_size, "%s %c %s ", equation_tex__(tree->left, br, mem_stk), tree->data.operand, equation_tex__(tree->right, br, mem_stk));
@@ -88,7 +94,14 @@ char* equation_tex__ (Node* tree, int* br, Stack* mem_stk)
     
     else if (tree->type == NUM)
     {
-        SPRINTF(buf, buf_size, "%lf", tree->data.value);
+        if ((tree->data.value - (int)tree->data.value) == 0)
+        {
+            SPRINTF(buf, buf_size, "%d", (int)tree->data.value);    
+        }
+        else 
+        {
+            SPRINTF(buf, buf_size, "%lf", tree->data.value);
+        }
         return buf;
     }
 
@@ -172,6 +185,8 @@ err diff_tex (Node* tree)
 
     full_der(out, tree, &vars, &data);
 
+    tex_teylor(out, tree, &vars, &data, 3);
+
     fclose(out);
 
     copy_file("tex/equation.tex", "tex/end.tex", "ab");
@@ -223,6 +238,39 @@ void full_der (FILE* out, Node* tree, vars* vars, Data* data)
     }
 
     fprintf(out, "\n%s\n\n", "\\end{dmath}");
+}
+
+void tex_teylor (FILE* out, Node* tree, vars* vars, Data* data, int accuracy)
+{
+    Node* Diff = NULL;
+
+    Stack mem_stk = {};
+
+    for (int j = 0; j < vars->qant; j++)
+    {
+        Diff = tree;
+        stack_ctor(&mem_stk, 1);
+
+        fprintf(out, "Разложение в ряд тейлора с точностью до %dого члена при %s -> 0: \n", accuracy, vars->data[j]);
+        fprintf(out, "\n\n%s", "\\begin{dmath}");
+        fprintf(out, "\n %s = %s", equation_tex_(Diff, &mem_stk), equation_tex_(Diff, &mem_stk));
+
+        stack_dtor(&mem_stk);
+
+        for (int i = 1; i < accuracy; i++)
+        {
+            fprintf(out, " + ");
+
+            Diff = diff(Diff, vars->data[j]);
+            simplifier(Diff);
+
+            stack_ctor(&mem_stk, 1);
+            fprintf(out, "(%s)", equation_tex_(Diff, &mem_stk));
+            stack_dtor(&mem_stk);
+        }
+        fprintf(out, "\n + o(x^%d)", accuracy);
+        fprintf(out, "\n%s\n\n", "\\end{dmath}");
+    }
 }
 
 void find_vars (Node* tree ,vars* vars)
