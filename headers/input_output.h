@@ -20,8 +20,6 @@ err draw_tree (Node* tree);
 
 err fill_buffer (FILE* read, char** buf);
 
-Node* get_g (const char* str);
-
 char* tex_tree (Node* tree);
 
 #endif // INPUT_OTPUT_H

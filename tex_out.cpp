@@ -57,10 +57,7 @@ char* equation_tex__ (Node* tree, int* br, Stack* mem_stk)
     stack_push(mem_stk, &buf);
 
     if (tree->data.operand == MUL || tree->data.operand == DIV)
-    {
-        // printf("set br = 1\n");
         *br = 1;
-    }
 
     if (tree->type == OPERAND)
     {
@@ -130,7 +127,6 @@ err copy_file (const char* to, const char* from, const char* mode)
 
     return SUCCESS;
 }
-
 
 err derivative_tex (FILE* out, Node* tree, const char* part)
 {

@@ -1,6 +1,7 @@
 #include "headers/differentiator.h"
 #include "headers/input_output.h"
 #include "headers/tex_out.h"
+#include "headers/recursive_descent.h"
 
 #include "..\UDL.h"
 #include <stdlib.h>
